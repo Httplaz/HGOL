@@ -4,8 +4,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class Core : MonoBehaviour {
 
+public class Core : MonoBehaviour {
 
     [Header("Input")]
     public bool paused = false;
@@ -16,12 +16,12 @@ public class Core : MonoBehaviour {
     [Header("Field")]
     public Texture2D tex2d;
     public int fieldSize;
-    public Color32[,] fieldColors = new Color32[1024,1024];
+    private Color32[,] fieldColors = new Color32[1024, 1024];
 
     [Header("Objects")]
-    public Creature[,] Creatures = new Creature[1024,1024];
+    private Creature[,] Creatures = new Creature[1024,1024];
     //[HideInInspector]
-    public Creature[] aliveBots = new Creature [1000000];
+    private Creature[] aliveBots = new Creature [1000000];
 
     public GameObject sphere;
 
@@ -30,9 +30,10 @@ public class Core : MonoBehaviour {
     public byte[] savedGenome = new byte[64];
 
     [Header("Beginning")]
-    public int startBotCount;
-    public int botCount;
-    public int reserveBotCount;
+    private int startBotCount;
+    private int botCount;
+    private int reserveBotCount;
+
     // Use this for initialization
     private void Awake()
     {
@@ -46,10 +47,10 @@ public class Core : MonoBehaviour {
         PlayerPrefs.Save();
     }
 
-
     void Start()
     {
-        string[] str = PlayerPrefs.GetString("SavedGenome").Split( );
+        botCount = 0;
+        string[] str = PlayerPrefs.GetString("SavedGenome").Split();
         for (int i = 0; i < 63; i++)
         {
             int.TryParse(str[i], out b);
@@ -87,23 +88,22 @@ public class Core : MonoBehaviour {
 
     void CreateBots()
     {
-        int curBot = 0;
-        for (int i = 0; i < startBotCount; i++)
+        for (int curBotIndex = 0; curBotIndex < startBotCount; curBotIndex++)
         {
-            int a = Random.Range(0, fieldSize);
-            int b = Random.Range(0, fieldSize);
-            if (Creatures[a, b] == null)
+            do
             {
-                Creatures[a, b] = new Creature()
-                {
-                    cordinates = new Vector2Int(a, b)
-                };
-                aliveBots[curBot] = Creatures[a, b];
-                aliveBots[curBot].id = (byte)curBot;
-                curBot += 1;
-                botCount += 1;
-            }
-            else startBotCount += 1;
+                int x = Random.Range(0, fieldSize);
+                int y = Random.Range(0, fieldSize);
+            } while (Creatures[x, y] != null)
+
+            Creature creature = new Creature()
+            {
+                cordinates = new Vector2Int(x, y)
+            };
+            creature.id = (byte)curBotIndex;
+            botCount += 1;
+            aliveBots[botCount - 1] = creature;
+            Creatures[x, y] = creature;
         }
         BotStart();
     }
@@ -112,21 +112,21 @@ public class Core : MonoBehaviour {
     {
         Render();
 
+        /*
         for (int x = 0; x < fieldSize; x++)
         {
             for (int y = 0; y < fieldSize; y++)
             {
-                //fieldColors[x, y] = Color.white;
+                fieldColors[x, y] = Color.white;
             }
         }
-
-
+        */
 
         for (int i = 0; i < botCount; i++)
         {
             if (aliveBots[i] != null)
             {
-                if (aliveBots[i].alive == true)
+                if (aliveBots[i].alive)
                     aliveBots[i].Step();
             }
         }
@@ -134,20 +134,9 @@ public class Core : MonoBehaviour {
 
     void BotStart()
     {
-        //for (int x=0; x<fieldSize; x++)
+        for (int i = 0; i < botCount; i++)
         {
-            //for (int y = 0; y < fieldSize; y++)
-            {
-                //if (Creatures[x, y] != null)
-                {
-                    //Creatures[x, y].LateStart();
-                }
-            }
-        }
-        for (int i =0; i<botCount; i++)
-        {
-          aliveBots[i].LateStart();
-          //aliveBots[Random.Range(0,botCount)].genome =
+            aliveBots[i].LateStart();
         }
         InvokeRepeating("Step", 0, stepDelay);
     }
@@ -160,11 +149,13 @@ public class Core : MonoBehaviour {
         {
             for (int y = 0; y < fieldSize; y++)
             {
-                fieldColors[x, y] = Color.white;
-                Creatures[x, y] = null;
-                aliveBots[x * y] = null;
-                botCount = 0;
+                Vector2Int pos = new Vector2Int(x, y);
+                SetCreature(pos, null);
             }
+        }
+        for (int i = 0; i < botCount; i++)
+        {
+            aliveBots[i] = null;
         }
         botCount = 0;
         startBotCount = reserveBotCount;
@@ -218,6 +209,55 @@ public class Core : MonoBehaviour {
         Creatures[pos.x, pos.y].genome = savedGenome;
     }
 
+    public Creature GetCreature(Vector2Int pos)
+    {
+        return Creatures[pos.x, pos.y];
+    }
 
+    private void SetCreature(Vector2Int pos, Creature creature)
+    {
+        Creatures[pos.x, pos.y] = creature;
+        Color color = Color.white;
+        if (creature != null) {
+            color = creature.myColor;
+        }
+        fieldColors[pos.x, pos.y] = color;
+    }
 
+    public void AddCreature(Vector2Int pos, Creature creature)
+    {
+        botCount += 1;
+        aliveBots[botCount - 1] = creature;
+        SetCreature(pos, creature);
+    }
+
+    public void RemoveCreature(Vector2Int pos)
+    {
+        aliveBots[GetCreature(pos).id] = null;
+        SetCreature(pos, null);
+    }
+
+    public void MoveCreature(Creature creature, Vector2Int targetPos)
+    {
+        Vector2Int oldPos = creature.cordinates;
+        SetCreature(oldPos, null);
+        SetCreature(targetPos, creature);
+        creature.cordinates = targetPos;
+        SetColor(oldPos, creature.pathColor);
+    }
+
+    public void SwapCreatures(Vector2Int pos1, Vector2Int pos2)
+    {
+        // TODO
+    }
+
+    public Color GetColor(Vector2Int pos)
+    {
+        return fieldColors[pos.x, pos.y];
+    }
+
+    public void SetColor(Vector2Int pos, Color color)
+    {
+        fieldColors[pos.x, pos.y] = color;
+    }
 }

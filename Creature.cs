@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
+
 public class Creature
 {
     public Core core;
@@ -32,6 +33,7 @@ public class Creature
 
     [Header("Field")]
     public Vector2Int[] nearCords = new Vector2Int[4];
+
     // Use this for initialization
     public void LateStart()
     {
@@ -40,14 +42,14 @@ public class Creature
         ChooseColor();
         CreateGenome();
         ChooseColor();
-        core.fieldColors[cordinates.x, cordinates.y] = myColor;
+        SendColor();
         nesw = (byte)Random.Range(0, 4);
     }
 
     public void Step()
     {
         //Debug.Log(cordinates);
-        //Debug.Log(core.Creatures[cordinates.x, cordinates.y].cordinates);
+        //Debug.Log(core.GetCreature(cordinates).cordinates);
         currentCommand += switcher;
         if (currentCommand > genomeEffectiveSize) currentCommand = (byte)(currentCommand - genomeEffectiveSize);
         if (genome.Length < currentCommand) Debug.Log(switcher);
@@ -58,7 +60,7 @@ public class Creature
         else if (energy > 50)
             energy = 50;
         SendColor();
-        if (core.Creatures[cordinates.x, cordinates.y] == null)
+        if (core.GetCreature(cordinates) == null)
             Debug.Log("error");
     }
 
@@ -71,21 +73,13 @@ public class Creature
     public void Movement()
     {
         CheckNear2();
-        if (core.Creatures[nearCords[nesw].x, nearCords[nesw].y] == null)
+        if (core.GetCreature(nearCords[nesw]) == null)
         {
-            {
-                core.fieldColors[cordinates.x, cordinates.y] = Color.white;
-                core.Creatures[nearCords[nesw].x, nearCords[nesw].y] = this;
-                core.Creatures[cordinates.x, cordinates.y] = null;
-                core.fieldColors[cordinates.x, cordinates.y] = pathColor;
-                cordinates = nearCords[nesw];
-                core.fieldColors[cordinates.x, cordinates.y] = myColor;
-                switcher = switchers[12];
-            }
+            core.MoveCreature(this, nearCords[nesw]);
+            switcher = switchers[12];
         }
         else switcher = switchers[13];
     }
-
 
     public void CheckNear2()
     {
@@ -150,14 +144,14 @@ public class Creature
                 CheckEnergy();
                 break;
             case 8:             //photosynthesis
-                energy+=7;
+                energy += 7;
                 break;
             case 17:             //multiplying
                 Multiply((byte)(energy/10), 0, 1, 2);
                 break;
             case 9:             //remember color
                 CheckNear2();
-                remColors[nesw] = core.fieldColors[nearCords[nesw].x, nearCords[nesw].y];
+                remColors[nesw] = core.GetColor(nearCords[nesw]);
                 break;
             case 11:            //eating
                 Eating();
@@ -165,31 +159,29 @@ public class Creature
             case 16:            //eating
                 Eating();
                 break;
-
-
         }
     }
 
     public byte InFront()
     {
         byte result = switchers[5]; //some color
-        if (core.Creatures[nearCords[nesw].x, nearCords[nesw].y] == null) //empty cell
+        if (GetCreature(nearCords[nesw]) == null) //empty cell
         {
-            if (core.fieldColors[nearCords[nesw].x, nearCords[nesw].y] == myColor)
+            if (core.GetColor(nearCords[nesw]) == myColor)
                 result = switchers[6]; //my territory
-            else if (core.fieldColors[nearCords[nesw].x, nearCords[nesw].y] == Color.white)
+            else if (core.GetColor(nearCords[nesw]) == Color.white)
                 result = switchers[7]; //nothing
 
             else //remembered color
             {
                 for (int i = 0; i < 4; i++)
-                    if (core.fieldColors[nearCords[nesw].x, nearCords[nesw].y] == remColors[i])
+                    if (core.GetColor(nearCords[nesw]) == remColors[i])
                         result = (byte)(switchers[8] + i);
             }
         }
-        else if (core.Creatures[nearCords[nesw].x, nearCords[nesw].y].myColor != myColor)
+        else if (core.GetCreature(nearCords[nesw]).myColor != myColor)
             result = switchers[9]; //not bro
-        else if (core.Creatures[nearCords[nesw].x, nearCords[nesw].y].myColor == Color.gray)
+        else if (core.GetCreature(nearCords[nesw]).myColor == Color.gray)
             result = switchers[10]; //dead body
         else
             result = switchers[11];
@@ -216,18 +208,17 @@ public class Creature
         for (int i=0; i<amount; i++)
         {
             energy -= 10;
-            if (core.Creatures[nearCords[i].x, nearCords[i].y] == null && energy > 0 && alive)
+            if (core.GetCreature(nearCords[i]) == null && energy > 0 && alive)
             {
-                core.botCount += 1;
-                core.aliveBots[core.botCount-1] = new Creature
+                Creature child = new Creature
                 {
                     cordinates = nearCords[i]
                 };
-                core.Creatures[nearCords[i].x, nearCords[i].y] = core.aliveBots[core.botCount-1];
-                core.aliveBots[core.botCount-1].LateStart();
-                core.aliveBots[core.botCount - 1].genome = genome;
-                core.aliveBots[core.botCount-1].myColor = myColor;
-                core.aliveBots[core.botCount - 1].energy = 5;
+                core.AddCreature(nearCords[i], child);
+                child.LateStart();
+                child.genome = genome;
+                child.myColor = myColor;
+                child.energy = 5;
             }
             else Death();
         }
@@ -235,21 +226,16 @@ public class Creature
 
     public void Eating()
     {
-        if (core.Creatures[nearCords[nesw].x, nearCords[nesw].y] != null)
-            {
-            energy += (byte)(core.Creatures[nearCords[nesw].x, nearCords[nesw].y].energy / 2);
-            core.aliveBots[core.Creatures[nearCords[nesw].x, nearCords[nesw].y].id] = null;
-            core.Creatures[nearCords[nesw].x, nearCords[nesw].y] = null;
+        if (core.GetCreature(nearCords[nesw]) != null)
+        {
+            energy += (byte)(core.GetCreature(nearCords[nesw]).energy / 2);
+            core.RemoveCreature(nearCords[nesw]);
             Movement();
-            }
+        }
     }
 
     public void SendColor()
     {
-        core.fieldColors[cordinates.x, cordinates.y] = myColor;
+        core.SetColor(cordinates, myColor);
     }
-
 }
-
-
-
