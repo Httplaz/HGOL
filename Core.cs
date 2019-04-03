@@ -98,7 +98,7 @@ public class Core : MonoBehaviour {
 
             Creature creature = new Creature()
             {
-                cordinates = new Vector2Int(x, y)
+                pos = new Vector2Int(x, y)
             };
             creature.id = (byte)curBotIndex;
             botCount += 1;
@@ -239,10 +239,10 @@ public class Core : MonoBehaviour {
 
     public void MoveCreature(Creature creature, Vector2Int targetPos)
     {
-        Vector2Int oldPos = creature.cordinates;
+        Vector2Int oldPos = creature.pos;
         SetCreature(oldPos, null);
         SetCreature(targetPos, creature);
-        creature.cordinates = targetPos;
+        creature.pos = targetPos;
         SetColor(oldPos, creature.pathColor);
     }
 
