@@ -14,7 +14,7 @@ public class Creature
 
     [Header("Stats")]
     byte energy = 10;
-    public byte id;
+    public int id;
     public bool alive = true;
 
     [Header("Commands")]

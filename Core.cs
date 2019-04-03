@@ -19,7 +19,7 @@ public class Core : MonoBehaviour {
     private Color32[,] fieldColors = new Color32[1024, 1024];
 
     [Header("Objects")]
-    private Creature[,] Creatures = new Creature[1024,1024];
+    private Creature[,] Creatures = new Creature[1024, 1024];
     //[HideInInspector]
     private Creature[] aliveBots = new Creature [1000000];
 
@@ -100,7 +100,7 @@ public class Core : MonoBehaviour {
             {
                 pos = new Vector2Int(x, y)
             };
-            creature.id = (byte)curBotIndex;
+            creature.id = curBotIndex;
             botCount += 1;
             aliveBots[botCount - 1] = creature;
             Creatures[x, y] = creature;
@@ -227,13 +227,17 @@ public class Core : MonoBehaviour {
     public void AddCreature(Vector2Int pos, Creature creature)
     {
         botCount += 1;
-        aliveBots[botCount - 1] = creature;
+        int id = botCount - 1;
+        creature.id = id;
+        aliveBots[id] = creature;
         SetCreature(pos, creature);
     }
 
     public void RemoveCreature(Vector2Int pos)
     {
-        aliveBots[GetCreature(pos).id] = null;
+        Creature creature = GetCreature(pos);
+        creature.id = -1;
+        aliveBots[creature.id] = null;
         SetCreature(pos, null);
     }
 
