@@ -5,13 +5,16 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 
+// TODO: get rid of magic numbers
+// TODO: move field logic out of input/output
+
+
 public class Core : MonoBehaviour {
 
     [Header("Input")]
     public bool paused = false;
     public RawImage selectedGenome;
-    public Vector2Int pos;
-    public int b;
+    private Creature selectedCreature;
 
     [Header("Field")]
     public Texture2D tex2d;
@@ -168,14 +171,26 @@ public class Core : MonoBehaviour {
         SceneManager.LoadScene(0);
     }
 
+    private Vector2Int ComputeSelectedCreaturePos() {
+        int x = (int)(Input.mousePosition.x / 17);
+        int y = (int)(Input.mousePosition.y / 17);
+        return new Vector2Int(x, y);
+    }
+
+    private bool PosExists(Vector2Int pos) {
+        return pos.x <= 63;  // TODO
+    }
+
     void FixedUpdate()
     {
         if (Input.GetMouseButton(0))
         {
-            if ((int)(Input.mousePosition.x / 17)<=63)
-            pos = new Vector2Int((int)(Input.mousePosition.x/17), (int)(Input.mousePosition.y/17));
-            //print(Input.mousePosition);
-            selectedGenome.color = fieldColors[pos.x, pos.y];
+            Vector2Int newSelectedCreaturePos = ComputeSelectedCreaturePos();
+            if (PosExists(newSelectedCreaturePos))
+            {
+                selectedCreature = GetCreature(newSelectedCreaturePos);
+            }
+            selectedGenome.color = GetColor(selectedCreature.pos);  // TODO: should it be moved to the "if" above?
         }
     }
 
@@ -195,18 +210,19 @@ public class Core : MonoBehaviour {
     public void SaveGenome()
     {
         string toSave = "";
-        for (byte i=0; i<63; i++)
+        Creature selectedCreature = selectedCreature;
+        for (byte i = 0; i < 63; i++)
         {
-            toSave += Creatures[pos.x, pos.y].genome[i]+" ";
+            toSave += selectedCreature.genome[i]+" ";
         }
         PlayerPrefs.SetString("SavedGenome", toSave);
         PlayerPrefs.Save();
-        
     }
 
     public void InsertGenome()
     {
-        Creatures[pos.x, pos.y].genome = savedGenome;
+        Creature selectedCreature = selectedCreature;
+        selectedCreature.genome = savedGenome;
     }
 
     public Creature GetCreature(Vector2Int pos)
