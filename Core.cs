@@ -233,6 +233,7 @@ public class Core : MonoBehaviour {
     private void SetCreature(Vector2Int pos, Creature creature)
     {
         Creatures[pos.x, pos.y] = creature;
+        creature.pos = pos;
         Color color = Color.white;
         if (creature != null) {
             color = creature.myColor;
