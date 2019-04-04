@@ -65,10 +65,29 @@ public class Core : MonoBehaviour {
         {
             for (int y = 0; y < fieldSize; y++)
             {
-                fieldColors[x, y] = Color.white;
+                Vector2Int pos = new Vector2Int(x, y);
+                SetColor(pos, Color.white);
             }
         }
         CreateBots();
+        InvokeRepeating("Step", 0, stepDelay);
+    }
+
+    void CreateBots()
+    {
+        for (int curBotIndex = 0; curBotIndex < startBotCount; curBotIndex++)
+        {
+            do
+            {
+                int x = Random.Range(0, fieldSize);
+                int y = Random.Range(0, fieldSize);
+                Vector2Int pos = new Vector2Int(x, y);
+            } while (GetCreature(pos) != null)
+
+            Creature creature = new Creature();
+            creature.LateStart();
+            AddCreature(creature);
+        }
     }
 
     void Render()
@@ -81,7 +100,8 @@ public class Core : MonoBehaviour {
         {
             for (int y = 0; y < fieldSize; y++)
             {
-                tex2d.SetPixel(x, y, fieldColors[x,y]);
+                Vector2Int pos = new Vector2Int(x, y);
+                tex2d.SetPixel(x, y, GetColor(pos));
             }
         }
         tex2d.Apply();
@@ -89,41 +109,9 @@ public class Core : MonoBehaviour {
         gameObject.GetComponent<RawImage>().texture = tex2d;
     }
 
-    void CreateBots()
-    {
-        for (int curBotIndex = 0; curBotIndex < startBotCount; curBotIndex++)
-        {
-            do
-            {
-                int x = Random.Range(0, fieldSize);
-                int y = Random.Range(0, fieldSize);
-            } while (Creatures[x, y] != null)
-
-            Creature creature = new Creature()
-            {
-                pos = new Vector2Int(x, y)
-            };
-            creature.id = curBotIndex;
-            botCount += 1;
-            aliveBots[botCount - 1] = creature;
-            Creatures[x, y] = creature;
-        }
-        BotStart();
-    }
-
     void Step()
     {
         Render();
-
-        /*
-        for (int x = 0; x < fieldSize; x++)
-        {
-            for (int y = 0; y < fieldSize; y++)
-            {
-                fieldColors[x, y] = Color.white;
-            }
-        }
-        */
 
         for (int i = 0; i < botCount; i++)
         {
@@ -133,15 +121,6 @@ public class Core : MonoBehaviour {
                     aliveBots[i].Step();
             }
         }
-    }
-
-    void BotStart()
-    {
-        for (int i = 0; i < botCount; i++)
-        {
-            aliveBots[i].LateStart();
-        }
-        InvokeRepeating("Step", 0, stepDelay);
     }
 
     public void Restart()
@@ -238,7 +217,7 @@ public class Core : MonoBehaviour {
         if (creature != null) {
             color = creature.myColor;
         }
-        fieldColors[pos.x, pos.y] = color;
+        SetColor(pos, color);
     }
 
     public void AddCreature(Vector2Int pos, Creature creature)
