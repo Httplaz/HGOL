@@ -84,9 +84,7 @@ public class Core : MonoBehaviour {
                 Vector2Int pos = new Vector2Int(x, y);
             } while (GetCreature(pos) != null)
 
-            Creature creature = new Creature();
-            creature.LateStart();
-            AddCreature(creature);
+            Creature creature = new Creature(this, pos);
         }
     }
 
@@ -243,7 +241,7 @@ public class Core : MonoBehaviour {
         SetCreature(oldPos, null);
         SetCreature(targetPos, creature);
         creature.pos = targetPos;
-        SetColor(oldPos, creature.pathColor);
+        SetColor(oldPos, creature.GetPathColor());
     }
 
     public void SwapCreatures(Vector2Int pos1, Vector2Int pos2)
