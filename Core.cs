@@ -236,9 +236,9 @@ public class Core : MonoBehaviour
     public void RemoveCreature(Vector2Int pos)
     {
         Creature creature = GetCreature(pos);
-        creature.id = -1;
         aliveBots[creature.id] = null;
         SetCreature(pos, null);
+        creature.id = -1;
     }
 
     public void MoveCreature(Creature creature, Vector2Int targetPos)
