@@ -1,5 +1,4 @@
-﻿
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -169,11 +168,11 @@ public class Core : MonoBehaviour
         if (Input.GetMouseButton(0))
         {
             Vector2Int newSelectedCreaturePos = ComputeSelectedCreaturePos();
-            if (PosExists(newSelectedCreaturePos))
+            if (PosExists(newSelectedCreaturePos) && Creatures[newSelectedCreaturePos.x, newSelectedCreaturePos.y]!=null)
             {
                 selectedCreature = GetCreature(newSelectedCreaturePos);
+                selectedGenome.color = GetColor(selectedCreature.pos);
             }
-            selectedGenome.color = GetColor(selectedCreature.pos);  // TODO: should it be moved to the "if" above?
         }
     }
 
@@ -270,5 +269,11 @@ public class Core : MonoBehaviour
     public void SetColor(Vector2Int pos, Color color)
     {
         fieldColors[pos.x, pos.y] = color;
+    }
+
+    public void Mutate(Creature creature, bool commandsOrSwitchers)
+    {
+        if (commandsOrSwitchers)
+            creature.genome[Random.Range(0, creature.genome.Length)] = (byte)Random.Range(0, creature.commandBorder + 1);
     }
 }

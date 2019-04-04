@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -64,8 +63,8 @@ public class Creature
         else if (energy > 50)
             energy = 50;
         SendColor();
-        if (core.GetCreature(pos) == null)
-            Debug.Log("error");
+        //if (core.GetCreature(pos) == null)
+            //Debug.Log("error");
     }
 
     public void FreeStep()
@@ -230,6 +229,7 @@ public class Creature
             {
                 Creature child = new Creature(core, nearCords[i], genome, myColor);
                 child.energy = 5;
+                child.switchers = switchers;
             }
             else Death();
         }
@@ -249,4 +249,5 @@ public class Creature
     {
         core.SetColor(pos, myColor);
     }
+
 }
