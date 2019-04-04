@@ -237,6 +237,9 @@ public class Core : MonoBehaviour {
 
     public void MoveCreature(Creature creature, Vector2Int targetPos)
     {
+        if (GetCreature(targetPos) != null) {
+            throw new System.InvalidOperationException("Cell must be empty to move to");
+        }
         Vector2Int oldPos = creature.pos;
         SetCreature(oldPos, null);
         SetCreature(targetPos, creature);
