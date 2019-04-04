@@ -214,8 +214,10 @@ public class Core : MonoBehaviour
     private void SetCreature(Vector2Int pos, Creature creature)
     {
         Creatures[pos.x, pos.y] = creature;
-        if (creature !=null)
-        creature.pos = pos;
+        if (creature != null)
+        {
+            creature.pos = pos;
+        }
         Color color = Color.white;
         if (creature != null)
         {
@@ -236,9 +238,9 @@ public class Core : MonoBehaviour
     public void RemoveCreature(Vector2Int pos)
     {
         Creature creature = GetCreature(pos);
-        creature.id = -1;
         aliveBots[creature.id] = null;
         SetCreature(pos, null);
+        creature.id = -1;
     }
 
     public void MoveCreature(Creature creature, Vector2Int targetPos)
