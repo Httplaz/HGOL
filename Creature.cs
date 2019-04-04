@@ -8,13 +8,12 @@ using Random = UnityEngine.Random;
 public class Creature
 {
     public Core core;
-    public Vector2Int cordinates;
+    public Vector2Int pos;
     public Color myColor;
-    public Color pathColor;
 
     [Header("Stats")]
     byte energy = 10;
-    public byte id;
+    public int id;
     public bool alive = true;
 
     [Header("Commands")]
@@ -34,22 +33,35 @@ public class Creature
     [Header("Field")]
     public Vector2Int[] nearCords = new Vector2Int[4];
 
-    // Use this for initialization
-    public void LateStart()
-    {
+    public Creature(Core core, Vector2Int pos, Genome genome, Color color) {
+        this.core = core;
+        core.AddCreature(pos, this);
         commandsCount = 0;
-        core = GameObject.FindGameObjectWithTag("GameController").GetComponent<Core>();
-        ChooseColor();
-        CreateGenome();
-        ChooseColor();
-        SendColor();
+
+        if (genome == null) {
+            genome = ChooseGenome();
+        }
+        this.genome = genome
+
+        CreateSwitchers();
+
+        if (color == null)
+        {
+            color = ChooseColor();
+        }
+        this.myColor = color;
+
         nesw = (byte)Random.Range(0, 4);
+    }
+
+    public Creature(Core core, Vector2Int pos) {
+        Creature(core, pos, null, null);
     }
 
     public void Step()
     {
-        //Debug.Log(cordinates);
-        //Debug.Log(core.GetCreature(cordinates).cordinates);
+        //Debug.Log(pos);
+        //Debug.Log(core.GetCreature(pos).pos);
         currentCommand += switcher;
         if (currentCommand > genomeEffectiveSize) currentCommand = (byte)(currentCommand - genomeEffectiveSize);
         if (genome.Length < currentCommand) Debug.Log(switcher);
@@ -60,14 +72,13 @@ public class Creature
         else if (energy > 50)
             energy = 50;
         SendColor();
-        if (core.GetCreature(cordinates) == null)
+        if (core.GetCreature(pos) == null)
             Debug.Log("error");
     }
 
     public void FreeStep()
     {
-
-
+        // TODO
     }
 
     public void Movement()
@@ -83,27 +94,41 @@ public class Creature
 
     public void CheckNear2()
     {
-        nearCords[0] = new Vector2Int((core.fieldSize + cordinates.x - 1) & (core.fieldSize - 1), cordinates.y);
-        nearCords[3] = new Vector2Int((core.fieldSize + cordinates.x + 1) & (core.fieldSize - 1), cordinates.y);
-        nearCords[1] = new Vector2Int(cordinates.x, (core.fieldSize + cordinates.y - 1) & (core.fieldSize - 1));
-        nearCords[2] = new Vector2Int(cordinates.x, (core.fieldSize + cordinates.y + 1) & (core.fieldSize - 1));
+        nearCords[0] = new Vector2Int((core.fieldSize + pos.x - 1) & (core.fieldSize - 1), pos.y);
+        nearCords[3] = new Vector2Int((core.fieldSize + pos.x + 1) & (core.fieldSize - 1), pos.y);
+        nearCords[1] = new Vector2Int(pos.x, (core.fieldSize + pos.y - 1) & (core.fieldSize - 1));
+        nearCords[2] = new Vector2Int(pos.x, (core.fieldSize + pos.y + 1) & (core.fieldSize - 1));
     }
 
-
-    void ChooseColor()
+    private Color32 ChooseColor()
     {
         byte r = (byte)(Random.Range(0,17) * 15);
         byte g = (byte)(Random.Range(0, 17-r/15) * 15);
         byte b = (byte)(255-g-r);
-        myColor = new Color32(r, g, b, 255);
-        pathColor = new Color32((byte)(255-r/17), (byte)(255 - g / 17), (byte)(255 - b / 17), 255);
+        return new Color32(r, g, b, 255);
     }
 
-    void CreateGenome()
+    public Color32 GetPathColor() {
+        byte r = (byte)(255 - myColor.r / 17);
+        byte g = (byte)(255 - myColor.g / 17);
+        byte b = (byte)(255 - myColor.b / 17);
+        return new Color32(r, g, b, 255);
+    }
+
+    private byte[] ChooseGenome()
+    {
+        byte[] result = new byte[64];
+        for (int i = 0; i < genomeEffectiveSize; i++)
+        {
+            result[i] = (byte)UnityEngine.Random.Range(0, commandBorder+1);
+        }
+        return result
+    }
+
+    void CreateSwitchers()
     {
         for (int i = 0; i < genomeEffectiveSize; i++)
         {
-            genome[i] = (byte)UnityEngine.Random.Range(0, commandBorder+1);
             switchers[i] = (byte)UnityEngine.Random.Range(0, genomeEffectiveSize);
         }
     }
@@ -210,14 +235,7 @@ public class Creature
             energy -= 10;
             if (core.GetCreature(nearCords[i]) == null && energy > 0 && alive)
             {
-                Creature child = new Creature
-                {
-                    cordinates = nearCords[i]
-                };
-                core.AddCreature(nearCords[i], child);
-                child.LateStart();
-                child.genome = genome;
-                child.myColor = myColor;
+                Creature child = new Creature(core, nearCords[i], genome, myColor);
                 child.energy = 5;
             }
             else Death();
@@ -236,6 +254,6 @@ public class Creature
 
     public void SendColor()
     {
-        core.SetColor(cordinates, myColor);
+        core.SetColor(pos, myColor);
     }
 }

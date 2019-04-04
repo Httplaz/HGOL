@@ -5,13 +5,16 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 
+// TODO: get rid of magic numbers
+// TODO: move field logic out of input/output
+
+
 public class Core : MonoBehaviour {
 
     [Header("Input")]
     public bool paused = false;
     public RawImage selectedGenome;
-    public Vector2Int pos;
-    public int b;
+    private Creature selectedCreature;
 
     [Header("Field")]
     public Texture2D tex2d;
@@ -19,7 +22,7 @@ public class Core : MonoBehaviour {
     private Color32[,] fieldColors = new Color32[1024, 1024];
 
     [Header("Objects")]
-    private Creature[,] Creatures = new Creature[1024,1024];
+    private Creature[,] Creatures = new Creature[1024, 1024];
     //[HideInInspector]
     private Creature[] aliveBots = new Creature [1000000];
 
@@ -62,10 +65,27 @@ public class Core : MonoBehaviour {
         {
             for (int y = 0; y < fieldSize; y++)
             {
-                fieldColors[x, y] = Color.white;
+                Vector2Int pos = new Vector2Int(x, y);
+                SetColor(pos, Color.white);
             }
         }
         CreateBots();
+        InvokeRepeating("Step", 0, stepDelay);
+    }
+
+    void CreateBots()
+    {
+        for (int curBotIndex = 0; curBotIndex < startBotCount; curBotIndex++)
+        {
+            do
+            {
+                int x = Random.Range(0, fieldSize);
+                int y = Random.Range(0, fieldSize);
+                Vector2Int pos = new Vector2Int(x, y);
+            } while (GetCreature(pos) != null)
+
+            Creature creature = new Creature(this, pos);
+        }
     }
 
     void Render()
@@ -78,7 +98,8 @@ public class Core : MonoBehaviour {
         {
             for (int y = 0; y < fieldSize; y++)
             {
-                tex2d.SetPixel(x, y, fieldColors[x,y]);
+                Vector2Int pos = new Vector2Int(x, y);
+                tex2d.SetPixel(x, y, GetColor(pos));
             }
         }
         tex2d.Apply();
@@ -86,41 +107,9 @@ public class Core : MonoBehaviour {
         gameObject.GetComponent<RawImage>().texture = tex2d;
     }
 
-    void CreateBots()
-    {
-        for (int curBotIndex = 0; curBotIndex < startBotCount; curBotIndex++)
-        {
-            do
-            {
-                int x = Random.Range(0, fieldSize);
-                int y = Random.Range(0, fieldSize);
-            } while (Creatures[x, y] != null)
-
-            Creature creature = new Creature()
-            {
-                cordinates = new Vector2Int(x, y)
-            };
-            creature.id = (byte)curBotIndex;
-            botCount += 1;
-            aliveBots[botCount - 1] = creature;
-            Creatures[x, y] = creature;
-        }
-        BotStart();
-    }
-
     void Step()
     {
         Render();
-
-        /*
-        for (int x = 0; x < fieldSize; x++)
-        {
-            for (int y = 0; y < fieldSize; y++)
-            {
-                fieldColors[x, y] = Color.white;
-            }
-        }
-        */
 
         for (int i = 0; i < botCount; i++)
         {
@@ -130,15 +119,6 @@ public class Core : MonoBehaviour {
                     aliveBots[i].Step();
             }
         }
-    }
-
-    void BotStart()
-    {
-        for (int i = 0; i < botCount; i++)
-        {
-            aliveBots[i].LateStart();
-        }
-        InvokeRepeating("Step", 0, stepDelay);
     }
 
     public void Restart()
@@ -168,14 +148,26 @@ public class Core : MonoBehaviour {
         SceneManager.LoadScene(0);
     }
 
+    private Vector2Int ComputeSelectedCreaturePos() {
+        int x = (int)(Input.mousePosition.x / 17);
+        int y = (int)(Input.mousePosition.y / 17);
+        return new Vector2Int(x, y);
+    }
+
+    private bool PosExists(Vector2Int pos) {
+        return pos.x <= 63;  // TODO
+    }
+
     void FixedUpdate()
     {
         if (Input.GetMouseButton(0))
         {
-            if ((int)(Input.mousePosition.x / 17)<=63)
-            pos = new Vector2Int((int)(Input.mousePosition.x/17), (int)(Input.mousePosition.y/17));
-            //print(Input.mousePosition);
-            selectedGenome.color = fieldColors[pos.x, pos.y];
+            Vector2Int newSelectedCreaturePos = ComputeSelectedCreaturePos();
+            if (PosExists(newSelectedCreaturePos))
+            {
+                selectedCreature = GetCreature(newSelectedCreaturePos);
+            }
+            selectedGenome.color = GetColor(selectedCreature.pos);  // TODO: should it be moved to the "if" above?
         }
     }
 
@@ -195,18 +187,19 @@ public class Core : MonoBehaviour {
     public void SaveGenome()
     {
         string toSave = "";
-        for (byte i=0; i<63; i++)
+        Creature selectedCreature = selectedCreature;
+        for (byte i = 0; i < 63; i++)
         {
-            toSave += Creatures[pos.x, pos.y].genome[i]+" ";
+            toSave += selectedCreature.genome[i]+" ";
         }
         PlayerPrefs.SetString("SavedGenome", toSave);
         PlayerPrefs.Save();
-        
     }
 
     public void InsertGenome()
     {
-        Creatures[pos.x, pos.y].genome = savedGenome;
+        Creature selectedCreature = selectedCreature;
+        selectedCreature.genome = savedGenome;
     }
 
     public Creature GetCreature(Vector2Int pos)
@@ -217,38 +210,47 @@ public class Core : MonoBehaviour {
     private void SetCreature(Vector2Int pos, Creature creature)
     {
         Creatures[pos.x, pos.y] = creature;
+        creature.pos = pos;
         Color color = Color.white;
         if (creature != null) {
             color = creature.myColor;
         }
-        fieldColors[pos.x, pos.y] = color;
+        SetColor(pos, color);
     }
 
     public void AddCreature(Vector2Int pos, Creature creature)
     {
         botCount += 1;
-        aliveBots[botCount - 1] = creature;
+        int id = botCount - 1;
+        creature.id = id;
+        aliveBots[id] = creature;
         SetCreature(pos, creature);
     }
 
     public void RemoveCreature(Vector2Int pos)
     {
-        aliveBots[GetCreature(pos).id] = null;
+        Creature creature = GetCreature(pos);
+        creature.id = -1;
+        aliveBots[creature.id] = null;
         SetCreature(pos, null);
     }
 
     public void MoveCreature(Creature creature, Vector2Int targetPos)
     {
-        Vector2Int oldPos = creature.cordinates;
-        SetCreature(oldPos, null);
-        SetCreature(targetPos, creature);
-        creature.cordinates = targetPos;
-        SetColor(oldPos, creature.pathColor);
+        if (GetCreature(targetPos) != null) {
+            throw new System.InvalidOperationException("Cell must be empty to move to");
+        }
+        Vector2Int oldPos = creature.pos;
+        SwapCreatures(oldPos, targetPos);
+        SetColor(oldPos, creature.GetPathColor());
     }
 
     public void SwapCreatures(Vector2Int pos1, Vector2Int pos2)
     {
-        // TODO
+        Creature creature1 = GetCreature(pos1);
+        Creature creature2 = GetCreature(pos2);
+        SetCreature(pos2, creature1);
+        SetCreature(pos1, creature2);
     }
 
     public Color GetColor(Vector2Int pos)
