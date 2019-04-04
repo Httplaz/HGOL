@@ -38,28 +38,16 @@ public class Creature
     {
         this.core = core;
         core.AddCreature(pos, this);
-        commandsCount = 0;
-
-        if (genome == null)
-        {
-            genome = ChooseGenome();
-        }
         this.genome = genome;
-
-        CreateSwitchers();
-
-        if (color == null)
-        {
-            color = ChooseColor();
-        }
         this.myColor = color;
-
+        CreateSwitchers();
+        commandsCount = 0;
         nesw = (byte)Random.Range(0, 4);
     }
 
     public Creature(Core core, Vector2Int pos)
     {
-        new Creature(core, pos, null, Color.green);
+        new Creature(core, pos, ChooseGenome(), ChooseColor());
     }
 
     public void Step()
