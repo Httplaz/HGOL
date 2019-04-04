@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -33,15 +34,17 @@ public class Creature
     [Header("Field")]
     public Vector2Int[] nearCords = new Vector2Int[4];
 
-    public Creature(Core core, Vector2Int pos, Genome genome, Color color) {
+    public Creature(Core core, Vector2Int pos, byte[] genome, Color color)
+    {
         this.core = core;
         core.AddCreature(pos, this);
         commandsCount = 0;
 
-        if (genome == null) {
+        if (genome == null)
+        {
             genome = ChooseGenome();
         }
-        this.genome = genome
+        this.genome = genome;
 
         CreateSwitchers();
 
@@ -54,8 +57,9 @@ public class Creature
         nesw = (byte)Random.Range(0, 4);
     }
 
-    public Creature(Core core, Vector2Int pos) {
-        Creature(core, pos, null, null);
+    public Creature(Core core, Vector2Int pos)
+    {
+        new Creature(core, pos, null, Color.green);
     }
 
     public void Step()
@@ -102,13 +106,14 @@ public class Creature
 
     private Color32 ChooseColor()
     {
-        byte r = (byte)(Random.Range(0,17) * 15);
-        byte g = (byte)(Random.Range(0, 17-r/15) * 15);
-        byte b = (byte)(255-g-r);
+        byte r = (byte)(Random.Range(0, 17) * 15);
+        byte g = (byte)(Random.Range(0, 17 - r / 15) * 15);
+        byte b = (byte)(255 - g - r);
         return new Color32(r, g, b, 255);
     }
 
-    public Color32 GetPathColor() {
+    public Color32 GetPathColor()
+    {
         byte r = (byte)(255 - myColor.r / 17);
         byte g = (byte)(255 - myColor.g / 17);
         byte b = (byte)(255 - myColor.b / 17);
@@ -120,9 +125,9 @@ public class Creature
         byte[] result = new byte[64];
         for (int i = 0; i < genomeEffectiveSize; i++)
         {
-            result[i] = (byte)UnityEngine.Random.Range(0, commandBorder+1);
+            result[i] = (byte)UnityEngine.Random.Range(0, commandBorder + 1);
         }
-        return result
+        return result;
     }
 
     void CreateSwitchers()
@@ -172,7 +177,7 @@ public class Creature
                 energy += 7;
                 break;
             case 17:             //multiplying
-                Multiply((byte)(energy/10), 0, 1, 2);
+                Multiply((byte)(energy / 10), 0, 1, 2);
                 break;
             case 9:             //remember color
                 CheckNear2();
@@ -190,7 +195,7 @@ public class Creature
     public byte InFront()
     {
         byte result = switchers[5]; //some color
-        if (GetCreature(nearCords[nesw]) == null) //empty cell
+        if (core.GetCreature(nearCords[nesw]) == null) //empty cell
         {
             if (core.GetColor(nearCords[nesw]) == myColor)
                 result = switchers[6]; //my territory
@@ -230,7 +235,7 @@ public class Creature
         CheckNear2();
         if (amount > 4)
             amount = 4;
-        for (int i=0; i<amount; i++)
+        for (int i = 0; i < amount; i++)
         {
             energy -= 10;
             if (core.GetCreature(nearCords[i]) == null && energy > 0 && alive)

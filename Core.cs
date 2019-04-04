@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -9,7 +10,8 @@ using UnityEngine.UI;
 // TODO: move field logic out of input/output
 
 
-public class Core : MonoBehaviour {
+public class Core : MonoBehaviour
+{
 
     [Header("Input")]
     public bool paused = false;
@@ -24,7 +26,7 @@ public class Core : MonoBehaviour {
     [Header("Objects")]
     private Creature[,] Creatures = new Creature[1024, 1024];
     //[HideInInspector]
-    private Creature[] aliveBots = new Creature [1000000];
+    private Creature[] aliveBots = new Creature[1000000];
 
     public GameObject sphere;
 
@@ -33,8 +35,8 @@ public class Core : MonoBehaviour {
     public byte[] savedGenome = new byte[64];
 
     [Header("Beginning")]
-    private int startBotCount;
-    private int botCount;
+    public int startBotCount;
+    public int botCount;
     private int reserveBotCount;
 
     // Use this for initialization
@@ -54,6 +56,7 @@ public class Core : MonoBehaviour {
     {
         botCount = 0;
         string[] str = PlayerPrefs.GetString("SavedGenome").Split();
+        int b;
         for (int i = 0; i < 63; i++)
         {
             int.TryParse(str[i], out b);
@@ -77,12 +80,13 @@ public class Core : MonoBehaviour {
     {
         for (int curBotIndex = 0; curBotIndex < startBotCount; curBotIndex++)
         {
+            Vector2Int pos;
             do
             {
                 int x = Random.Range(0, fieldSize);
                 int y = Random.Range(0, fieldSize);
-                Vector2Int pos = new Vector2Int(x, y);
-            } while (GetCreature(pos) != null)
+                pos = new Vector2Int(x, y);
+            } while (GetCreature(pos) != null);
 
             Creature creature = new Creature(this, pos);
         }
@@ -148,13 +152,15 @@ public class Core : MonoBehaviour {
         SceneManager.LoadScene(0);
     }
 
-    private Vector2Int ComputeSelectedCreaturePos() {
+    private Vector2Int ComputeSelectedCreaturePos()
+    {
         int x = (int)(Input.mousePosition.x / 17);
         int y = (int)(Input.mousePosition.y / 17);
         return new Vector2Int(x, y);
     }
 
-    private bool PosExists(Vector2Int pos) {
+    private bool PosExists(Vector2Int pos)
+    {
         return pos.x <= 63;  // TODO
     }
 
@@ -187,10 +193,9 @@ public class Core : MonoBehaviour {
     public void SaveGenome()
     {
         string toSave = "";
-        Creature selectedCreature = selectedCreature;
         for (byte i = 0; i < 63; i++)
         {
-            toSave += selectedCreature.genome[i]+" ";
+            toSave += selectedCreature.genome[i] + " ";
         }
         PlayerPrefs.SetString("SavedGenome", toSave);
         PlayerPrefs.Save();
@@ -198,7 +203,6 @@ public class Core : MonoBehaviour {
 
     public void InsertGenome()
     {
-        Creature selectedCreature = selectedCreature;
         selectedCreature.genome = savedGenome;
     }
 
@@ -210,9 +214,11 @@ public class Core : MonoBehaviour {
     private void SetCreature(Vector2Int pos, Creature creature)
     {
         Creatures[pos.x, pos.y] = creature;
+        if (creature !=null)
         creature.pos = pos;
         Color color = Color.white;
-        if (creature != null) {
+        if (creature != null)
+        {
             color = creature.myColor;
         }
         SetColor(pos, color);
@@ -237,7 +243,8 @@ public class Core : MonoBehaviour {
 
     public void MoveCreature(Creature creature, Vector2Int targetPos)
     {
-        if (GetCreature(targetPos) != null) {
+        if (GetCreature(targetPos) != null)
+        {
             throw new System.InvalidOperationException("Cell must be empty to move to");
         }
         Vector2Int oldPos = creature.pos;
