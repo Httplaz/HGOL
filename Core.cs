@@ -241,15 +241,16 @@ public class Core : MonoBehaviour {
             throw new System.InvalidOperationException("Cell must be empty to move to");
         }
         Vector2Int oldPos = creature.pos;
-        SetCreature(oldPos, null);
-        SetCreature(targetPos, creature);
-        creature.pos = targetPos;
+        SwapCreatures(oldPos, targetPos);
         SetColor(oldPos, creature.GetPathColor());
     }
 
     public void SwapCreatures(Vector2Int pos1, Vector2Int pos2)
     {
-        // TODO
+        Creature creature1 = GetCreature(pos1);
+        Creature creature2 = GetCreature(pos2);
+        SetCreature(pos2, creature1);
+        SetCreature(pos1, creature2);
     }
 
     public Color GetColor(Vector2Int pos)
