@@ -1,122 +1,40 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 
-// TODO: get rid of magic numbers
-// TODO: move field logic out of input/output
-
-
-public class Core : MonoBehaviour
+public class Core
 {
-
-    [Header("Input")]
-    public bool paused = false;
-    public RawImage selectedGenome;
-    private Creature selectedCreature;
-
     [Header("Field")]
-    public Texture2D tex2d;
-    public int fieldSize;
-    private Color32[,] fieldColors = new Color32[1024, 1024];
+    public Vector2Int FieldSize;
+    private Creature[,] Creatures;
+    private Color32[,] FieldColors;
 
-    [Header("Objects")]
-    private Creature[,] Creatures = new Creature[1024, 1024];
-    //[HideInInspector]
-    private Creature[] aliveBots = new Creature[1000000];
+    [Header("Bots")]
+    public int BotCount;
+    private Creature[] AliveBots;
 
-    public GameObject sphere;
-
-    [Header("Numbers")]
-    public float stepDelay;
-    public byte[] savedGenome = new byte[64];
-
-    [Header("Beginning")]
-    public int startBotCount;
-    public int botCount;
-    private int reserveBotCount;
-
-    // Use this for initialization
-    private void Awake()
+    public Core (Vector2Int fieldSize, int startBotCount)
     {
-        PlayerPrefs.SetInt("BotStartCount", startBotCount);
-        string toSave = "";
-        for (byte i = 0; i < 63; i++)
-        {
-            toSave += 1 + " ";
-        }
-        PlayerPrefs.SetString("SavedGenome", toSave);
-        PlayerPrefs.Save();
+        FieldSize = fieldSize;
+        Creatures = new Creature[FieldSize.x, FieldSize.y];
+        FieldColors = new Color32[FieldSize.x, FieldSize.y];
+        AliveBots = new Creature[FieldSize.x * FieldSize.y * 8];  // TODO
+        BotCount = 0;
+        CreatureBots(startBotCount);
     }
 
-    void Start()
+    private bool PosExists(Vector2Int pos)
     {
-        botCount = 0;
-        string[] str = PlayerPrefs.GetString("SavedGenome").Split();
-        int b;
-        for (int i = 0; i < 63; i++)
-        {
-            int.TryParse(str[i], out b);
-            savedGenome[i] = (byte)b;
-        }
-        startBotCount = PlayerPrefs.GetInt("BotStartCount");
-        reserveBotCount = startBotCount;
-        for (int x = 0; x < fieldSize; x++)
-        {
-            for (int y = 0; y < fieldSize; y++)
-            {
-                Vector2Int pos = new Vector2Int(x, y);
-                SetColor(pos, Color.white);
-            }
-        }
-        CreateBots();
-        InvokeRepeating("Step", 0, stepDelay);
-    }
-
-    void CreateBots()
-    {
-        for (int curBotIndex = 0; curBotIndex < startBotCount; curBotIndex++)
-        {
-            Vector2Int pos;
-            do
-            {
-                int x = Random.Range(0, fieldSize);
-                int y = Random.Range(0, fieldSize);
-                pos = new Vector2Int(x, y);
-            } while (GetCreature(pos) != null);
-
-            Creature creature = new Creature(this, pos);
-        }
-    }
-
-    void Render()
-    {
-        tex2d = new Texture2D(fieldSize, fieldSize)
-        {
-            filterMode = FilterMode.Point
-        };
-        for (int x = 0; x < fieldSize; x++)
-        {
-            for (int y = 0; y < fieldSize; y++)
-            {
-                Vector2Int pos = new Vector2Int(x, y);
-                tex2d.SetPixel(x, y, GetColor(pos));
-            }
-        }
-        tex2d.Apply();
-
-        gameObject.GetComponent<RawImage>().texture = tex2d;
+        bool x_exists = 0 <= pos.x && pos.x < FieldSize.x;
+        bool y_exists = 0 <= pos.y && pos.y < FieldSize.y;
+        return x_exists && y_exists;
     }
 
     void Step()
     {
-        Render();
-
-        for (int i = 0; i < botCount; i++)
+        for (int i = 0; i < BotCount; i++)
         {
-            Creature creature = aliveBots[i];
+            Creature creature = AliveBots[i];
             if (creature != null)
             {
                 if (creature.alive)
@@ -125,87 +43,20 @@ public class Core : MonoBehaviour
         }
     }
 
-    public void Restart()
+    void CreateBots(int botCount)
     {
-        savedGenome = aliveBots[Random.Range(0, botCount)].genome;
-        //PlayerPrefs.set
-        for (int x = 0; x < fieldSize; x++)
+        for (int curBotIndex = 0; curBotIndex < botCount; curBotIndex++)
         {
-            for (int y = 0; y < fieldSize; y++)
+            Vector2Int pos;
+            do
             {
-                Vector2Int pos = new Vector2Int(x, y);
-                SetCreature(pos, null);
-            }
+                int x = Random.Range(0, FieldSize);
+                int y = Random.Range(0, FieldSize);
+                pos = new Vector2Int(x, y);
+            } while (GetCreature(pos) != null);
+
+            Creature creature = new Creature(this, pos);
         }
-        for (int i = 0; i < botCount; i++)
-        {
-            aliveBots[i] = null;
-        }
-        botCount = 0;
-        startBotCount = reserveBotCount;
-        Start();
-    }
-
-    public void Restart2()
-    {
-        PlayerPrefs.SetInt("BotStartCount", reserveBotCount);
-        SceneManager.LoadScene(0);
-    }
-
-    private Vector2Int ComputeSelectedCreaturePos()
-    {
-        int x = (int)(Input.mousePosition.x / 17);
-        int y = (int)(Input.mousePosition.y / 17);
-        return new Vector2Int(x, y);
-    }
-
-    private bool PosExists(Vector2Int pos)
-    {
-        bool x_exists = 0 <= pos.x && pos.x < fieldSize;
-        bool y_exists = 0 <= pos.y && pos.y < fieldSize;
-        return x_exists && y_exists;
-    }
-
-    void FixedUpdate()
-    {
-        if (Input.GetMouseButton(0))
-        {
-            Vector2Int newSelectedCreaturePos = ComputeSelectedCreaturePos();
-            if (PosExists(newSelectedCreaturePos) && GetCreature(newSelectedCreaturePos) != null)
-            {
-                selectedCreature = GetCreature(newSelectedCreaturePos);
-                selectedGenome.color = GetColor(newSelectedCreaturePos);
-            }
-        }
-    }
-
-    public void Pause()
-    {
-        paused = !paused;
-        if (paused)
-        {
-            CancelInvoke("Step");
-        }
-        else
-        {
-            InvokeRepeating("Step", 0, stepDelay);
-        }
-    }
-
-    public void SaveGenome()
-    {
-        string toSave = "";
-        for (byte i = 0; i < 63; i++)
-        {
-            toSave += selectedCreature.genome[i] + " ";
-        }
-        PlayerPrefs.SetString("SavedGenome", toSave);
-        PlayerPrefs.Save();
-    }
-
-    public void InsertGenome()
-    {
-        selectedCreature.genome = savedGenome;
     }
 
     public Creature GetCreature(Vector2Int pos)
@@ -220,6 +71,7 @@ public class Core : MonoBehaviour
         {
             creature.pos = pos;
         }
+        // TODO
         Color color = Color.white;
         if (creature != null)
         {
@@ -266,17 +118,23 @@ public class Core : MonoBehaviour
 
     public Color GetColor(Vector2Int pos)
     {
-        return fieldColors[pos.x, pos.y];
+        return FieldColors[pos.x, pos.y];
     }
 
     public void SetColor(Vector2Int pos, Color color)
     {
-        fieldColors[pos.x, pos.y] = color;
+        FieldColors[pos.x, pos.y] = color;
     }
 
+    // TODO: move out
     public void Mutate(Creature creature, bool commandsOrSwitchers)
     {
         if (commandsOrSwitchers)
             creature.genome[Random.Range(0, creature.genome.Length)] = (byte)Random.Range(0, creature.commandBorder + 1);
+    }
+
+    public Creature GetRandomCreature()
+    {
+        return AliveBots[Random.Range(0, BotCount)];
     }
 }
