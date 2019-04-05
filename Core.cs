@@ -116,10 +116,11 @@ public class Core : MonoBehaviour
 
         for (int i = 0; i < botCount; i++)
         {
-            if (aliveBots[i] != null)
+            Creature creature = aliveBots[i];
+            if (creature != null)
             {
-                if (aliveBots[i].alive)
-                    aliveBots[i].Step();
+                if (creature.alive)
+                    creature.Step();
             }
         }
     }
@@ -168,10 +169,10 @@ public class Core : MonoBehaviour
         if (Input.GetMouseButton(0))
         {
             Vector2Int newSelectedCreaturePos = ComputeSelectedCreaturePos();
-            if (PosExists(newSelectedCreaturePos) && Creatures[newSelectedCreaturePos.x, newSelectedCreaturePos.y]!=null)
+            if (PosExists(newSelectedCreaturePos) && GetCreature(newSelectedCreaturePos) != null)
             {
                 selectedCreature = GetCreature(newSelectedCreaturePos);
-                selectedGenome.color = GetColor(selectedCreature.pos);
+                selectedGenome.color = GetColor(newSelectedCreaturePos);
             }
         }
     }
