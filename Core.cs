@@ -161,7 +161,9 @@ public class Core : MonoBehaviour
 
     private bool PosExists(Vector2Int pos)
     {
-        return pos.x <= 63;  // TODO
+        bool x_exists = 0 <= pos.x && pos.x < fieldSize;
+        bool y_exists = 0 <= pos.y && pos.y < fieldSize;
+        return x_exists && y_exists;
     }
 
     void FixedUpdate()
