@@ -6,7 +6,7 @@ public class Core
 {
     [Header("Field")]
     public Vector2Int FieldSize;
-    private Creature[,] Creatures;
+    private Creature[,] CreaturesField;
     private Color32[,] FieldColors;
 
     [Header("Bots")]
@@ -22,7 +22,7 @@ public class Core
     public Core (Vector2Int fieldSize, int startBotCount)
     {
         FieldSize = fieldSize;
-        Creatures = new Creature[FieldSize.x, FieldSize.y];
+        CreaturesField = new Creature[FieldSize.x, FieldSize.y];
         FieldColors = new Color32[FieldSize.x, FieldSize.y];
         Bots = new LinkedList<Creature>();
         CreatureBots(startBotCount);
@@ -70,12 +70,12 @@ public class Core
 
     public Creature GetCreature(Vector2Int pos)
     {
-        return Creatures[pos.x, pos.y];
+        return CreaturesField[pos.x, pos.y];
     }
 
     private void SetCreature(Vector2Int pos, Creature creature)
     {
-        Creatures[pos.x, pos.y] = creature;
+        CreaturesField[pos.x, pos.y] = creature;
         if (creature != null)
         {
             creature.pos = pos;
