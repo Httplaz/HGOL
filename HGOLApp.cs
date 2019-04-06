@@ -36,10 +36,6 @@ public class HGOLApp : MonoBehaviour
         {
             return core.BotCount;
         }
-        set
-        {
-            throw new System.InvalidOperationException("Can't change botCount value");
-        }
     };
 
     // Use this for initialization
