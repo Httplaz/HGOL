@@ -10,16 +10,21 @@ public class Core
     private Color32[,] FieldColors;
 
     [Header("Bots")]
+    private LinkedList<Creature> Bots;
     public int BotCount;
-    private Creature[] AliveBots;
+    {
+        get
+        {
+            return Bots.Count;
+        }
+    }
 
     public Core (Vector2Int fieldSize, int startBotCount)
     {
         FieldSize = fieldSize;
         Creatures = new Creature[FieldSize.x, FieldSize.y];
         FieldColors = new Color32[FieldSize.x, FieldSize.y];
-        AliveBots = new Creature[FieldSize.x * FieldSize.y * 8];  // TODO
-        BotCount = 0;
+        Bots = new LinkedList<Creature>();
         CreatureBots(startBotCount);
     }
 
@@ -32,13 +37,17 @@ public class Core
 
     void Step()
     {
-        for (int i = 0; i < BotCount; i++)
+        for
+        (
+            LinkedListNode<Creature> node = Bots.First;
+            node != null;
+            node = node.Next
+        )
         {
-            Creature creature = AliveBots[i];
-            if (creature != null)
+            Creature bot = node.value;
+            if (bot.alive)
             {
-                if (creature.alive)
-                    creature.Step();
+                bot.Step();
             }
         }
     }
@@ -82,19 +91,15 @@ public class Core
 
     public void AddCreature(Vector2Int pos, Creature creature)
     {
-        botCount += 1;
-        int id = botCount - 1;
-        creature.id = id;
-        aliveBots[id] = creature;
+        Bots.AddLast(creature);
         SetCreature(pos, creature);
     }
 
     public void RemoveCreature(Vector2Int pos)
     {
         Creature creature = GetCreature(pos);
-        aliveBots[creature.id] = null;
         SetCreature(pos, null);
-        creature.id = -1;
+        Bots.Remove(creature);  // TODO: O(n) may cause problems
     }
 
     public void MoveCreature(Creature creature, Vector2Int targetPos)
@@ -135,6 +140,12 @@ public class Core
 
     public Creature GetRandomCreature()
     {
-        return AliveBots[Random.Range(0, BotCount)];
+        int BotIndex = Random.Range(0, BotCount);
+        LinkedListNode<Creature> node = Bots.First;
+        for (int i = 0; i != BotIndex; i++)
+        {
+            node = node.next;
+        }
+        return node.value;
     }
 }
