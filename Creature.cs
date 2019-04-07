@@ -12,7 +12,7 @@ public class Creature
     public Color myColor;
 
     [Header("Stats")]
-    byte energy = 10;
+    byte energy;
     public int id;
     public bool alive = true;
 
@@ -33,20 +33,26 @@ public class Creature
     [Header("Field")]
     public Vector2Int[] nearCords = new Vector2Int[4];
 
-    public Creature(Core core, Vector2Int pos, byte[] genome, Color color)
+    public Creature(Core core, Vector2Int pos, byte[] genome, byte[] switchers, Color color, byte energy)
     {
         this.core = core;
         core.AddCreature(pos, this);
         this.genome = genome;
+        this.switchers = switchers;
         this.myColor = color;
-        CreateSwitchers();
-        commandsCount = 0;
+        this.energy = energy
+        commandsCount = 0;  // TODO: ?
         nesw = (byte)Random.Range(0, 4);
+    }
+
+    public Creature(Core core, Vector2Int pos, Creature parent, byte energy)
+    {
+        new Creature(core, pos, parent.genome, parent.switchers, parent.color, energy);
     }
 
     public Creature(Core core, Vector2Int pos)
     {
-        new Creature(core, pos, ChooseGenome(), ChooseColor());
+        new Creature(core, pos, ChooseGenome(), ChooseSwitchers(), ChooseColor(), 10);
     }
 
     public void Step()
@@ -117,12 +123,14 @@ public class Creature
         return result;
     }
 
-    void CreateSwitchers()
+    private byte[] ChooseSwitchers()
     {
+        byte[] result = new byte[64];  // TODO: remove magic number
         for (int i = 0; i < genomeEffectiveSize; i++)
         {
-            switchers[i] = (byte)UnityEngine.Random.Range(0, genomeEffectiveSize);
+            result[i] = (byte)UnityEngine.Random.Range(0, genomeEffectiveSize);
         }
+        return result;
     }
 
     void DoSomething(int command)
@@ -227,9 +235,8 @@ public class Creature
             energy -= 10;
             if (core.GetCreature(nearCords[i]) == null && energy > 0 && alive)
             {
-                Creature child = new Creature(core, nearCords[i], genome, myColor);
-                child.energy = 5;
-                child.switchers = switchers;
+                byte childEnergy = 5;
+                Creature child = new Creature(core, nearCords[i], this, childEnergy);
             }
             else Death();
         }
