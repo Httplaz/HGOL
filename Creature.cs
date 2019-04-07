@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -40,14 +41,14 @@ public class Creature
         this.genome = genome;
         this.switchers = switchers;
         this.myColor = color;
-        this.energy = energy
+        this.energy = energy;
         commandsCount = 0;  // TODO: ?
         nesw = (byte)Random.Range(0, 4);
     }
 
     public Creature(Core core, Vector2Int pos, Creature parent, byte energy)
     {
-        new Creature(core, pos, parent.genome, parent.switchers, parent.color, energy);
+        new Creature(core, pos, parent.genome, parent.switchers, parent.myColor, energy);
     }
 
     public Creature(Core core, Vector2Int pos)
@@ -70,7 +71,7 @@ public class Creature
             energy = 50;
         SendColor();
         //if (core.GetCreature(pos) == null)
-            //Debug.Log("error");
+        //Debug.Log("error");
     }
 
     public void FreeStep()
@@ -91,10 +92,10 @@ public class Creature
 
     public void CheckNear2()
     {
-        nearCords[0] = new Vector2Int((core.fieldSize + pos.x - 1) & (core.fieldSize - 1), pos.y);
-        nearCords[3] = new Vector2Int((core.fieldSize + pos.x + 1) & (core.fieldSize - 1), pos.y);
-        nearCords[1] = new Vector2Int(pos.x, (core.fieldSize + pos.y - 1) & (core.fieldSize - 1));
-        nearCords[2] = new Vector2Int(pos.x, (core.fieldSize + pos.y + 1) & (core.fieldSize - 1));
+        nearCords[0] = new Vector2Int((core.FieldSize.x + pos.x - 1) & (core.FieldSize.y - 1), pos.y);
+        nearCords[3] = new Vector2Int((core.FieldSize.x + pos.x + 1) & (core.FieldSize.y - 1), pos.y);
+        nearCords[1] = new Vector2Int(pos.x, (core.FieldSize.x + pos.y - 1) & (core.FieldSize.y - 1));
+        nearCords[2] = new Vector2Int(pos.x, (core.FieldSize.x + pos.y + 1) & (core.FieldSize.y - 1));
     }
 
     private Color32 ChooseColor()
